@@ -1,0 +1,19 @@
+body{
+    padding: 50px;
+}
+
+p{
+    font-weight: bold;
+}
+
+#chat-overlay{
+    position: fixed;
+    background-color: white;
+    height: 100%;
+    width: 100%;
+    display: none;
+}
+
+#go-back{
+    cursor: pointer;
+}

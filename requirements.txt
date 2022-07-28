@@ -1,0 +1,8 @@
+Django == 3.2
+djangorestframework == 3.11
+psycopg2==2.8.0
+django-cors-headers
+gunicorn
+daphne == 3.0.2
+channels == 3.0.3
+channels_redis

@@ -1,0 +1,105 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+  <head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+    
+    <link rel="stylesheet" href="{% static 'css/style.css' %}" >
+    <link rel="stylesheet" type="text/css" href="//cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick.css"/>
+    <title>Chat application</title>
+    <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js" integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n" crossorigin="anonymous"></script>
+   <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" integrity="sha512-894YE6QWD5I59HgZOGReFYm4dnWc1Qt5NtvYSaNcOP+u1T9qYdvdihz0PPSiiqn/+/3e7Jo4EaG7TubfWGUrMQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script>
+
+        let messages = []
+
+        var template = (props) => {
+            return `
+                ${props.map((item) => {
+                    return `<h6>${item}</h6>`
+                }).join('')}
+            `
+        }
+
+        const startChat = (room_url) => {
+            const socket = new WebSocket('ws://' + window.location.hostname + '/ws/chat/' + room_url + '/')
+            socket.onopen = () => {
+              document.getElementById("chat-overlay").style.display = "block"
+              document.getElementById("room-title").innerHTML = room_url
+            }
+
+            socket.onmessage = (e) => {
+              var msg = JSON.parse(e.data).message
+              messages.push(msg)
+              document.getElementById("chat-box").innerHTML = template(messages)
+            }
+
+            document.getElementById("send").onclick = () => {
+              var get_input = document.getElementById("message")
+              socket.send(JSON.stringify({'message': get_input.value}))
+              get_input.value = ''
+            }
+
+            document.getElementById("go-back").onclick = () => {
+              socket.close()
+            }
+
+            socket.onclose = () => {
+              document.getElementById("chat-overlay").style.display = "none"
+              document.getElementById("chat-box").innerHTML = ''
+              document.getElementById("message").value = ''
+              messages = []
+            }
+        }
+      
+    </script>
+  </head>
+
+  <body>
+    {% csrf_token %}
+
+    <div id="chat-overlay">
+      <div style="display: flex;"> 
+        <h5 id="go-back">&#x2190;</h5>
+        <h5 id="room-title"></h5>
+      </div>
+      <div id="chat-box"></div>
+      <input id="message" type="text" />
+      <button id="send">Send</button>
+    </div>
+    {% if messages %}
+      <ul class="messages">
+          {% for message in messages %}
+          <div class="container-fluid p-0">
+          <div class="alert {{ message.tags }} alert-dismissible" role="alert" >
+              <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+              <span aria-hidden="True">&times;</span>
+              </button>
+              {{ message }}
+          </div>
+          </div>
+          {% endfor %}
+      </ul>
+    {% endif %}
+    <h4>Rooms</h4>
+    {% for i in qs %}
+      <div style="display: flex;margin-top: 15px;">
+        <h6 style="margin-right: 20px;">{{ i.name }}</h6>
+        <button onclick="startChat('{{i.name}}')">Join</button>
+      </div>
+    {% endfor %}
+
+    <h4 style="margin-top: 50px;">Create room</h4>
+    <form method="post" action="">
+      {% csrf_token %}
+      <input type="text" id="room-in" name="room_name" />
+      <button id="create" onclick="">Create</button>
+    </form>
+    <a href="/logout/">Logout</a>
+   </body>
+</html>

@@ -1,0 +1,47 @@
+version: '3.7'
+
+services:
+  app:
+    build: .
+    command: sh -c "python manage.py migrate & gunicorn -w 4 project.wsgi -b 0.0.0.0:8000 & daphne -b 0.0.0.0 -p 8001 project.asgi:application"
+    volumes:
+      - .:/code
+    ports:
+      - "8000:8000"
+      - "8001:8001"
+    environment:
+      - DJANGO_SETTINGS_MODULE=project.settings
+    depends_on:
+      - db
+
+
+  db:
+    image: postgres
+    environment:
+      - POSTGRES_DB=chat-app #Use .env file in production
+      - POSTGRES_USER=user #Use .env file in production
+      - POSTGRES_PASSWORD=user123 #Use .env file in production
+      - TZ:'Asia/Kolkata'
+      - PGTZ:'Asia/Kolkata'
+
+
+  nginx:
+      build:
+        context: .
+        dockerfile: ./nginx/Dockerfile-nginx
+      volumes:
+        - .:/code
+        - ./static:/static
+      ports:
+        - "80:80"
+      depends_on:
+        - app
+
+
+  redis-server:
+    image: redis
+    command: redis-server
+    ports:
+      - "6379:6379"
+    depends_on:
+      - db
